@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { ScriptTypeSelector } from "./script-type-selector";
 import { IdeaInput } from "./idea-input";
-import { AIAnalysis } from "./ai-analysis";
+import { AIAnalysisComponent } from "./ai-analysis";
 import { ScriptStructure } from "./script-structure";
 import { FinalScriptModal } from "./final-script-modal";
 import { AgentState, Script } from "../types/script";
@@ -282,7 +282,7 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
           {/* Step 3: AI Analysis & Questions */}
           {currentStep === 3 && agentState?.analysis && agentState?.questions && (
             <div>
-              <AIAnalysis
+              <AIAnalysisComponent
                 analysis={agentState.analysis}
                 questions={agentState.questions}
                 answers={answers}

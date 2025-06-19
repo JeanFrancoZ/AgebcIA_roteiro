@@ -105,7 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(result);
     } catch (error) {
-      res.status(500).json({ error: "Falha na análise da IA: " + error.message });
+      res.status(500).json({ error: "Falha na análise da IA: " + (error as Error).message });
     }
   });
 
@@ -140,7 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(result);
     } catch (error) {
-      res.status(500).json({ error: "Falha ao processar respostas: " + error.message });
+      res.status(500).json({ error: "Falha ao processar respostas: " + (error as Error).message });
     }
   });
 
@@ -181,7 +181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(result);
     } catch (error) {
-      res.status(500).json({ error: "Falha ao gerar roteiro: " + error.message });
+      res.status(500).json({ error: "Falha ao gerar roteiro: " + (error as Error).message });
     }
   });
 
@@ -201,7 +201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(result);
     } catch (error) {
-      res.status(500).json({ error: "Falha ao regenerar estrutura: " + error.message });
+      res.status(500).json({ error: "Falha ao regenerar estrutura: " + (error as Error).message });
     }
   });
 

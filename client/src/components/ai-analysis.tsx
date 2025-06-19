@@ -12,7 +12,7 @@ interface AIAnalysisProps {
   onAnswerChange: (questionId: string, answer: string) => void;
 }
 
-export function AIAnalysis({ analysis, questions, answers, onAnswerChange }: AIAnalysisProps) {
+export function AIAnalysisComponent({ analysis, questions, answers, onAnswerChange }: AIAnalysisProps) {
   return (
     <div className="space-y-6">
       <div className="mb-6">

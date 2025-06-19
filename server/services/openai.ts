@@ -72,7 +72,7 @@ Responda em JSON com este formato:
 
     return JSON.parse(response.choices[0].message.content || "{}");
   } catch (error) {
-    throw new Error(`Falha ao analisar ideia: ${error.message}`);
+    throw new Error(`Falha ao analisar ideia: ${(error as Error).message}`);
   }
 }
 
@@ -119,7 +119,7 @@ Responda em JSON com este formato:
     const result = JSON.parse(response.choices[0].message.content || "{}");
     return result.questions || [];
   } catch (error) {
-    throw new Error(`Falha ao gerar perguntas: ${error.message}`);
+    throw new Error(`Falha ao gerar perguntas: ${(error as Error).message}`);
   }
 }
 
@@ -171,7 +171,7 @@ Responda em JSON com este formato:
 
     return JSON.parse(response.choices[0].message.content || "{}");
   } catch (error) {
-    throw new Error(`Falha ao gerar estrutura: ${error.message}`);
+    throw new Error(`Falha ao gerar estrutura: ${(error as Error).message}`);
   }
 }
 
@@ -215,7 +215,7 @@ Crie um roteiro completo e profissional, sem usar marcadores JSON - apenas o tex
 
     return response.choices[0].message.content || "";
   } catch (error) {
-    throw new Error(`Falha ao gerar roteiro final: ${error.message}`);
+    throw new Error(`Falha ao gerar roteiro final: ${(error as Error).message}`);
   }
 }
 
