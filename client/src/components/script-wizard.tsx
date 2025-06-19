@@ -35,6 +35,16 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
       setCurrentScript(script);
       onScriptCreated?.(script);
       queryClient.invalidateQueries({ queryKey: ["/api/scripts"] });
+      // Call analyzeScriptMutation after script creation
+      if (script && script.id) {
+        analyzeScriptMutation.mutate(script.id);
+      } else {
+        toast({
+          title: "Erro",
+          description: "ID do roteiro inválido após a criação.",
+          variant: "destructive",
+        });
+      }
     },
     onError: () => {
       toast({
@@ -49,7 +59,7 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
     mutationFn: (scriptId: number) => api.analyzeScript(scriptId),
     onSuccess: (state) => {
       setAgentState(state);
-      setCurrentStep(3);
+      setCurrentStep(3); // Move to step 3 after analysis
     },
     onError: () => {
       toast({
@@ -134,10 +144,13 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
         type: selectedType!,
         idea,
       });
+      // analyzeScriptMutation is now called in onSuccess of createScriptMutation
     }
   };
 
   const handleAnalyzeIdea = () => {
+    // This function is no longer directly called by the button in Step 2
+    // but can be kept for potential future use or removed if not needed.
     if (currentScript) {
       analyzeScriptMutation.mutate(currentScript.id);
     }
