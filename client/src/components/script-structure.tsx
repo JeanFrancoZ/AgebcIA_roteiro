@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ScriptStructure } from "../types/script";
 import { Button } from "@/components/ui/button";
 import { Clock, Edit, Check, RotateCcw } from "lucide-react";
@@ -5,7 +6,7 @@ import { Clock, Edit, Check, RotateCcw } from "lucide-react";
 interface ScriptStructureProps {
   structure: ScriptStructure;
   onApproveSection: (sectionIndex: number) => void;
-  onEditSection: (sectionIndex: number) => void;
+  onEditSection: (sectionIndex: number, newContent: string) => void;
   onRegenerateStructure: () => void;
 }
 
@@ -29,6 +30,23 @@ export function ScriptStructureComponent({
   onEditSection, 
   onRegenerateStructure 
 }: ScriptStructureProps) {
+  const [editingSection, setEditingSection] = useState<number | null>(null);
+  const [editedContent, setEditedContent] = useState("");
+
+  const handleEdit = (index: number, content: string) => {
+    setEditingSection(index);
+    setEditedContent(content);
+  };
+
+  const handleSave = (index: number) => {
+    onEditSection(index, editedContent);
+    setEditingSection(null);
+  };
+
+  const handleCancel = () => {
+    setEditingSection(null);
+    setEditedContent("");
+  };
   return (
     <div className="space-y-6">
       <div className="mb-6">
@@ -58,7 +76,7 @@ export function ScriptStructureComponent({
                     size="sm"
                     variant="secondary"
                     className="bg-white/20 hover:bg-white/30 text-white border-none"
-                    onClick={() => onEditSection(index)}
+                    onClick={() => handleEdit(index, section.content)}
                   >
                     <Edit className="h-3 w-3 mr-1" />
                     Editar
@@ -76,9 +94,25 @@ export function ScriptStructureComponent({
             </div>
             <div className="p-6">
               <div className="prose prose-sm max-w-none dark:prose-invert">
-                <div className="text-slate-700 dark:text-slate-300 mb-4 whitespace-pre-wrap">
-                  {section.content}
-                </div>
+                {editingSection === index ? (
+                  <div>
+                    <textarea
+                      aria-label={`Editar conteúdo da seção: ${section.name}`}
+                      className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+                      value={editedContent}
+                      onChange={(e) => setEditedContent(e.target.value)}
+                      rows={6}
+                    />
+                    <div className="flex justify-end space-x-2 mt-2">
+                      <Button size="sm" variant="outline" onClick={handleCancel}>Cancelar</Button>
+                      <Button size="sm" onClick={() => handleSave(index)}>Salvar</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-slate-700 dark:text-slate-300 mb-4 whitespace-pre-wrap">
+                    {section.content}
+                  </div>
+                )}
                 {section.tips.length > 0 && (
                   <div className="bg-slate-50 dark:bg-slate-700 rounded p-3">
                     <h5 className="font-medium text-slate-900 dark:text-white mb-2">Dicas de Produção:</h5>

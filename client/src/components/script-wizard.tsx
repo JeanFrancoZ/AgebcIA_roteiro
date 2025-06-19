@@ -175,8 +175,13 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
     }
   };
 
-  const handleEdit = () => {
-    setCurrentStep(3);
+  const handleEditSection = (sectionIndex: number, newContent: string) => {
+    if (agentState && agentState.structure) {
+      const newSections = [...agentState.structure.sections];
+      newSections[sectionIndex] = { ...newSections[sectionIndex], content: newContent };
+      const newStructure = { ...agentState.structure, sections: newSections };
+      setAgentState({ ...agentState, structure: newStructure });
+    }
   };
 
   const handleRegenerateStructure = () => {
@@ -348,7 +353,7 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
                     description: `Seção ${index + 1} foi aprovada com sucesso`,
                   });
                 }}
-                onEditSection={handleEdit}
+                onEditSection={handleEditSection}
                 onRegenerateStructure={handleRegenerateStructure}
               />
 
