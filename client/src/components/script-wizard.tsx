@@ -9,6 +9,7 @@ import { ScriptTypeSelector } from "./script-type-selector";
 import { IdeaInput } from "./idea-input";
 import { AIAnalysisComponent } from "./ai-analysis";
 import { ScriptStructureComponent } from "./script-structure";
+import { AgentThought } from "./agent-thought";
 
 import { AgentState, Script } from "../types/script";
 import { ChevronLeft, ChevronRight, Sparkles, FileText } from "lucide-react";
@@ -25,6 +26,7 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
   const [currentScript, setCurrentScript] = useState<Script | null>(null);
   const [agentState, setAgentState] = useState<AgentState | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [agentThoughts, setAgentThoughts] = useState<string[]>([]);
   const [approvedSections, setApprovedSections] = useState<boolean[]>([]);
   const [, setLocation] = useLocation();
   
@@ -61,6 +63,7 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
     mutationFn: (scriptId: number) => api.analyzeScript(scriptId),
     onSuccess: (state) => {
       setAgentState(state);
+      setAgentThoughts(state.thoughts || []);
       setCurrentStep(3); // Move to step 3 after analysis
     },
     onError: () => {
@@ -77,6 +80,7 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
       api.submitAnswers(scriptId, answers),
     onSuccess: (state) => {
       setAgentState(state);
+      setAgentThoughts(state.thoughts || []);
       setCurrentStep(4);
     },
     onError: () => {
@@ -92,6 +96,7 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
     mutationFn: (scriptId: number) => api.generateScript(scriptId),
     onSuccess: (state) => {
       setAgentState(state);
+      setAgentThoughts(state.thoughts || []);
       if (currentScript) {
         setLocation(`/script/${currentScript.id}`);
       }
@@ -110,6 +115,7 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
     mutationFn: (scriptId: number) => api.regenerateStructure(scriptId),
     onSuccess: (state) => {
       setAgentState(state);
+      setAgentThoughts(state.thoughts || []);
       if (state.structure) {
         setApprovedSections(new Array(state.structure.sections.length).fill(false));
       }
@@ -243,6 +249,13 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
         </div>
 
         <div className="p-6">
+          {/* Agent Thoughts */}
+          {agentThoughts.length > 0 && (
+            <div className="mb-8">
+              <AgentThought thoughts={agentThoughts} />
+            </div>
+          )}
+
           {/* Step 1: Script Type Selection */}
           {currentStep === 1 && (
             <div>
