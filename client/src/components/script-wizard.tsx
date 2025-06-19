@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { ScriptTypeSelector } from "./script-type-selector";
 import { IdeaInput } from "./idea-input";
 import { AIAnalysisComponent } from "./ai-analysis";
 import { ScriptStructureComponent } from "./script-structure";
-import { FinalScriptModal } from "./final-script-modal";
+
 import { AgentState, Script } from "../types/script";
 import { ChevronLeft, ChevronRight, Sparkles, FileText } from "lucide-react";
 
@@ -24,7 +25,8 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
   const [currentScript, setCurrentScript] = useState<Script | null>(null);
   const [agentState, setAgentState] = useState<AgentState | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [showFinalScript, setShowFinalScript] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
+  const [, setLocation] = useLocation();
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -90,7 +92,9 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
     mutationFn: (scriptId: number) => api.generateScript(scriptId),
     onSuccess: (state) => {
       setAgentState(state);
-      setShowFinalScript(true);
+      if (currentScript) {
+        setLocation(`/script/${currentScript.id}`);
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/scripts"] });
     },
     onError: () => {
@@ -169,6 +173,10 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
     if (currentScript) {
       generateScriptMutation.mutate(currentScript.id);
     }
+  };
+
+  const handleEdit = () => {
+    setCurrentStep(3);
   };
 
   const handleRegenerateStructure = () => {
@@ -334,17 +342,13 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
               <ScriptStructureComponent
                 structure={agentState.structure}
                 onApproveSection={(index: number) => {
+                  setIsApproved(true);
                   toast({
                     title: "Seção aprovada",
                     description: `Seção ${index + 1} foi aprovada com sucesso`,
                   });
                 }}
-                onEditSection={(index: number) => {
-                  toast({
-                    title: "Edição",
-                    description: `Editando seção ${index + 1}`,
-                  });
-                }}
+                onEditSection={handleEdit}
                 onRegenerateStructure={handleRegenerateStructure}
               />
 
@@ -360,8 +364,9 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
                   </div>
                   <Button 
                     onClick={handleGenerateScript}
-                    disabled={isLoading}
+                    disabled={isLoading || !isApproved}
                     size="lg"
+                    className={isApproved ? 'bg-green-500 hover:bg-green-600' : ''}
                   >
                     {isLoading ? (
                       <>
@@ -371,7 +376,7 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
                     ) : (
                       <>
                         <FileText className="mr-2 h-4 w-4" />
-                        Gerar Roteiro Completo
+                        {isApproved ? 'Aprovado' : 'Aprovar e Gerar Roteiro'}
                       </>
                     )}
                   </Button>
@@ -389,17 +394,7 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
         </div>
       </Card>
 
-      {/* Final Script Modal */}
-      {agentState?.finalScript && (
-        <FinalScriptModal
-          isOpen={showFinalScript}
-          onClose={() => setShowFinalScript(false)}
-          script={agentState.finalScript}
-          title={currentScript?.title || "Roteiro"}
-          type={currentScript?.type || ""}
-          duration={agentState.structure?.totalDuration}
-        />
-      )}
+
     </>
   );
 }
