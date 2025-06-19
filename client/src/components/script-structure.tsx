@@ -23,7 +23,7 @@ const sectionIcons = [
   "fas fa-star"
 ];
 
-export function ScriptStructure({ 
+export function ScriptStructureComponent({ 
   structure, 
   onApproveSection, 
   onEditSection, 

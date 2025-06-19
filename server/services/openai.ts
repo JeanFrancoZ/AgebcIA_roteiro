@@ -220,7 +220,7 @@ Crie um roteiro completo e profissional, sem usar marcadores JSON - apenas o tex
 }
 
 function getScriptTypeInPortuguese(type: string): string {
-  const types = {
+  const types: Record<string, string> = {
     tiktok: "TikTok/Reels",
     youtube: "YouTube",
     marketing: "Marketing/Publicidade",
@@ -230,7 +230,7 @@ function getScriptTypeInPortuguese(type: string): string {
 }
 
 function getStructurePrompt(type: string): string {
-  const structures = {
+  const structures: Record<string, string> = {
     tiktok: "Gancho (3-5s) → Desenvolvimento (40-50s) → Call-to-Action (5-7s)",
     youtube: "Introdução (10-15%) → Desenvolvimento (70-80%) → Conclusão (10-15%)",
     marketing: "Atenção → Interesse → Desejo → Ação (AIDA)",
@@ -240,7 +240,7 @@ function getStructurePrompt(type: string): string {
 }
 
 function getScriptFormatGuide(type: string): string {
-  const formats = {
+  const formats: Record<string, string> = {
     tiktok: "Formato Master Scenes com indicações para vertical (9:16), transições rápidas, legendas",
     youtube: "Formato de roteiro para YouTube com marcações de tempo, B-roll, gráficos",
     marketing: "Formato publicitário com CTA claro, indicações visuais, copy persuasivo",

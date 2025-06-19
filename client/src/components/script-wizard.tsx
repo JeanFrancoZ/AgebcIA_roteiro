@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ScriptTypeSelector } from "./script-type-selector";
 import { IdeaInput } from "./idea-input";
 import { AIAnalysisComponent } from "./ai-analysis";
-import { ScriptStructure } from "./script-structure";
+import { ScriptStructureComponent } from "./script-structure";
 import { FinalScriptModal } from "./final-script-modal";
 import { AgentState, Script } from "../types/script";
 import { ChevronLeft, ChevronRight, Sparkles, FileText } from "lucide-react";
@@ -318,7 +318,7 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
           {/* Step 4: Generated Script Structure */}
           {currentStep === 4 && agentState?.structure && (
             <div>
-              <ScriptStructure
+              <ScriptStructureComponent
                 structure={agentState.structure}
                 onApproveSection={(index) => {
                   toast({

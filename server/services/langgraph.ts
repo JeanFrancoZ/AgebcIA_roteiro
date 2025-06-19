@@ -37,7 +37,7 @@ export class ScriptingAgent {
       
       return this.state;
     } catch (error) {
-      this.state.error = error.message;
+      this.state.error = (error as Error).message;
       return this.state;
     }
   }
@@ -55,7 +55,7 @@ export class ScriptingAgent {
       
       return this.state;
     } catch (error) {
-      this.state.error = error.message;
+      this.state.error = (error as Error).message;
       return this.state;
     }
   }
@@ -78,7 +78,7 @@ export class ScriptingAgent {
       this.state.currentStep = 'completed';
       return this.state;
     } catch (error) {
-      this.state.error = error.message;
+      this.state.error = (error as Error).message;
       return this.state;
     }
   }
@@ -100,7 +100,7 @@ export class ScriptingAgent {
       );
       return this.state;
     } catch (error) {
-      this.state.error = error.message;
+      this.state.error = (error as Error).message;
       return this.state;
     }
   }
