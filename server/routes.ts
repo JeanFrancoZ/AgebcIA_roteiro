@@ -121,12 +121,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const sessionKey = `script_${scriptId}`;
+      console.log(`[Answers] Attempting to retrieve agent with sessionKey: ${sessionKey}`); // Log added
       const agent = agents.get(sessionKey);
       
       if (!agent) {
+        console.error(`[Answers] Agent not found for sessionKey: ${sessionKey}`); // Log added
         res.status(400).json({ error: "Sessão da IA não encontrada. Inicie a análise novamente." });
         return;
       }
+      console.log(`[Answers] Agent found for sessionKey: ${sessionKey}`); // Log added
 
       const result = await agent.processAnswers(answers);
       
