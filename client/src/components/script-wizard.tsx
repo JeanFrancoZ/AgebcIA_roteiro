@@ -7,12 +7,10 @@ import { useToast } from "@/hooks/use-toast";
 import { ScriptTypeSelector } from "./script-type-selector";
 import { IdeaInput } from "./idea-input";
 import { AIAnalysisComponent } from "./ai-analysis";
-import { ScriptStructureComponent, Section } from "./script-structure";
-// import { FinalScriptModal } from "./final-script-modal"; // Remover esta linha
+import { ScriptStructureComponent } from "./script-structure";
+import { FinalScriptModal } from "./final-script-modal";
 import { AgentState, Script } from "../types/script";
 import { ChevronLeft, ChevronRight, Sparkles, FileText } from "lucide-react";
-// import { useNavigate } from 'react-router-dom'; // Alterar esta linha
-import { useRouter } from 'wouter'; // Adicionar esta linha
 
 interface ScriptWizardProps {
   onScriptCreated?: (script: Script) => void;
@@ -26,15 +24,10 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
   const [currentScript, setCurrentScript] = useState<Script | null>(null);
   const [agentState, setAgentState] = useState<AgentState | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  // const [showFinalScript, setShowFinalScript] = useState(false); // Remover esta linha
-  const [editingSection, setEditingSection] = useState<number | null>(null);
-  const [editedContent, setEditedContent] = useState<string>("");
-  const [approvedSections, setApprovedSections] = useState<number[]>([]);
+  const [showFinalScript, setShowFinalScript] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  // const navigate = useNavigate(); // Alterar esta linha
-  const router = useRouter(); // Adicionar esta linha
 
   const createScriptMutation = useMutation({
     mutationFn: (data: { title: string; type: string; idea: string }) => api.createScript(data),
@@ -97,17 +90,7 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
     mutationFn: (scriptId: number) => api.generateScript(scriptId),
     onSuccess: (state) => {
       setAgentState(state);
-      if (state.finalScript && currentScript) {
-        // Alterar a forma de navegação e passagem de estado
-        router.push('/final-script', { 
-          state: {
-            script: state.finalScript,
-            title: currentScript.title,
-            type: currentScript.type,
-            duration: state.structure?.totalDuration,
-          }
-        });
-      }
+      setShowFinalScript(true);
       queryClient.invalidateQueries({ queryKey: ["/api/scripts"] });
     },
     onError: () => {
@@ -179,7 +162,6 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
         scriptId: currentScript.id,
         answers,
       });
-      setApprovedSections([]); // Reset approved sections when generating new structure
     }
   };
 
@@ -197,35 +179,6 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
 
   const handleAnswerChange = (questionId: string, answer: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
-  };
-
-  const handleEditSection = (index: number, currentContent: string) => {
-    setEditingSection(index);
-    setEditedContent(currentContent);
-  };
-
-  const handleSaveSectionEdit = () => {
-    if (editingSection !== null && agentState?.structure?.sections) {
-      const updatedSections = agentState.structure.sections.map((section, idx) => 
-        idx === editingSection ? { ...section, content: editedContent } : section
-      );
-      setAgentState(prev => prev ? { 
-        ...prev, 
-        structure: prev.structure ? { ...prev.structure, sections: updatedSections as Section[] } : undefined 
-      } : null);
-      setEditingSection(null);
-      setEditedContent("");
-      toast({
-        title: "Seção atualizada",
-        description: `Seção ${editingSection + 1} foi atualizada com sucesso`,
-      });
-    }
-  };
-
-  const handleApproveSection = (index: number) => {
-    setApprovedSections(prev => 
-      prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
-    );
   };
 
   const isLoading = createScriptMutation.isPending || 
@@ -380,15 +333,19 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
             <div>
               <ScriptStructureComponent
                 structure={agentState.structure}
-                onApproveSection={handleApproveSection}
-                onEditSection={handleEditSection} 
+                onApproveSection={(index: number) => {
+                  toast({
+                    title: "Seção aprovada",
+                    description: `Seção ${index + 1} foi aprovada com sucesso`,
+                  });
+                }}
+                onEditSection={(index: number) => {
+                  toast({
+                    title: "Edição",
+                    description: `Editando seção ${index + 1}`,
+                  });
+                }}
                 onRegenerateStructure={handleRegenerateStructure}
-                editingSection={editingSection}
-                editedContent={editedContent}
-                onEditContentChange={setEditedContent}
-                onSaveEdit={handleSaveSectionEdit}
-                onCancelEdit={() => setEditingSection(null)}
-                approvedSections={approvedSections}
               />
 
               <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-6 mt-8">
@@ -432,7 +389,7 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
         </div>
       </Card>
 
-      {/* Final Script Modal - Remover esta seção
+      {/* Final Script Modal */}
       {agentState?.finalScript && (
         <FinalScriptModal
           isOpen={showFinalScript}
@@ -442,7 +399,7 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
           type={currentScript?.type || ""}
           duration={agentState.structure?.totalDuration}
         />
-      )} */}
+      )}
     </>
   );
 }

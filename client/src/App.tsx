@@ -5,13 +5,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
-import { FinalScriptPage } from "@/pages/final-script-page"; // Adicionar esta linha
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/final-script" component={FinalScriptPage} /> {/* Adicionar esta linha */}
       <Route component={NotFound} />
     </Switch>
   );
