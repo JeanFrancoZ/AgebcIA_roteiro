@@ -1,12 +1,14 @@
-import { ScriptStructure } from "../types/script";
+import React, { FC } from 'react';
 import { Button } from "@/components/ui/button";
 import { Clock, Edit, Check, RotateCcw } from "lucide-react";
+import { ScriptStructure } from "../types/script";
 
 interface ScriptStructureProps {
   structure: ScriptStructure;
   onApproveSection: (sectionIndex: number) => void;
-  onEditSection: (sectionIndex: number) => void;
+  onEditSection: (sectionIndex: number, content: string) => void;
   onRegenerateStructure: () => void;
+  approvedSections: number[];
 }
 
 const sectionGradients = [
@@ -23,12 +25,13 @@ const sectionIcons = [
   "fas fa-star"
 ];
 
-export function ScriptStructureComponent({ 
-  structure, 
-  onApproveSection, 
-  onEditSection, 
-  onRegenerateStructure 
-}: ScriptStructureProps) {
+export const ScriptStructureComponent: FC<ScriptStructureProps> = ({
+  structure,
+  onApproveSection,
+  onEditSection,
+  onRegenerateStructure,
+  approvedSections
+}) => {
   return (
     <div className="space-y-6">
       <div className="mb-6">
@@ -55,22 +58,32 @@ export function ScriptStructureComponent({
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button
-                    size="sm"
-                    variant="secondary"
-                    className="bg-white/20 hover:bg-white/30 text-white border-none"
-                    onClick={() => onEditSection(index)}
-                  >
-                    <Edit className="h-3 w-3 mr-1" />
-                    Editar
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="bg-green-500 hover:bg-green-600 text-white"
-                    onClick={() => onApproveSection(index)}
-                  >
-                    <Check className="h-3 w-3 mr-1" />
-                    Aprovar
-                  </Button>
+                      size="sm"
+                      variant="secondary"
+                      className="bg-white/20 hover:bg-white/30 text-white border-none"
+                      onClick={() => onEditSection(index, section.content)}
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Editar
+                    </Button>
+                  {approvedSections.includes(index) ? (
+                    <Button
+                      size="sm"
+                      className="bg-green-700 text-white cursor-not-allowed"
+                      disabled
+                    >
+                      Aprovado
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className="bg-green-500 hover:bg-green-600 text-white"
+                      onClick={() => onApproveSection(index)}
+                    >
+                      <Check className="h-3 w-3 mr-1" />
+                      Aprovar
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
