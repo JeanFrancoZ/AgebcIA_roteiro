@@ -5,9 +5,10 @@ import { Clock, Edit, Check, RotateCcw } from "lucide-react";
 
 interface ScriptStructureProps {
   structure: ScriptStructure;
-  onApproveSection: (sectionIndex: number) => void;
+  onToggleApproveSection: (sectionIndex: number, isApproved: boolean) => void;
   onEditSection: (sectionIndex: number, newContent: string) => void;
   onRegenerateStructure: () => void;
+  approvedSections: boolean[];
 }
 
 const sectionGradients = [
@@ -26,9 +27,10 @@ const sectionIcons = [
 
 export function ScriptStructureComponent({ 
   structure, 
-  onApproveSection, 
+  onToggleApproveSection, 
   onEditSection, 
-  onRegenerateStructure 
+  onRegenerateStructure,
+  approvedSections
 }: ScriptStructureProps) {
   const [editingSection, setEditingSection] = useState<number | null>(null);
   const [editedContent, setEditedContent] = useState("");
@@ -83,11 +85,11 @@ export function ScriptStructureComponent({
                   </Button>
                   <Button
                     size="sm"
-                    className="bg-green-500 hover:bg-green-600 text-white"
-                    onClick={() => onApproveSection(index)}
+                    className={approvedSections[index] ? "bg-teal-600 hover:bg-teal-700 text-white" : "bg-green-500 hover:bg-green-600 text-white"}
+                    onClick={() => onToggleApproveSection(index, !approvedSections[index])}
                   >
                     <Check className="h-3 w-3 mr-1" />
-                    Aprovar
+                    {approvedSections[index] ? "Aprovado" : "Aprovar"}
                   </Button>
                 </div>
               </div>

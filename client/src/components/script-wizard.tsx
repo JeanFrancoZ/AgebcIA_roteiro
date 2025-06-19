@@ -25,7 +25,7 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
   const [currentScript, setCurrentScript] = useState<Script | null>(null);
   const [agentState, setAgentState] = useState<AgentState | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [isApproved, setIsApproved] = useState(false);
+  const [approvedSections, setApprovedSections] = useState<boolean[]>([]);
   const [, setLocation] = useLocation();
   
   const { toast } = useToast();
@@ -110,6 +110,9 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
     mutationFn: (scriptId: number) => api.regenerateStructure(scriptId),
     onSuccess: (state) => {
       setAgentState(state);
+      if (state.structure) {
+        setApprovedSections(new Array(state.structure.sections.length).fill(false));
+      }
       toast({
         title: "Sucesso",
         description: "Nova estrutura gerada com sucesso",
@@ -167,6 +170,12 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
         answers,
       });
     }
+  };
+
+  const handleToggleApproveSection = (sectionIndex: number, isApproved: boolean) => {
+    const newApprovedSections = [...approvedSections];
+    newApprovedSections[sectionIndex] = isApproved;
+    setApprovedSections(newApprovedSections);
   };
 
   const handleGenerateScript = () => {
@@ -346,15 +355,10 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
             <div>
               <ScriptStructureComponent
                 structure={agentState.structure}
-                onApproveSection={(index: number) => {
-                  setIsApproved(true);
-                  toast({
-                    title: "Seção aprovada",
-                    description: `Seção ${index + 1} foi aprovada com sucesso`,
-                  });
-                }}
+                onToggleApproveSection={handleToggleApproveSection}
                 onEditSection={handleEditSection}
                 onRegenerateStructure={handleRegenerateStructure}
+                approvedSections={approvedSections}
               />
 
               <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-6 mt-8">
@@ -369,9 +373,9 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
                   </div>
                   <Button 
                     onClick={handleGenerateScript}
-                    disabled={isLoading || !isApproved}
+                    disabled={isLoading || !approvedSections.every(Boolean)}
                     size="lg"
-                    className={isApproved ? 'bg-green-500 hover:bg-green-600' : ''}
+                    className={approvedSections.every(Boolean) ? 'bg-green-500 hover:bg-green-600' : ''}
                   >
                     {isLoading ? (
                       <>
@@ -381,7 +385,7 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
                     ) : (
                       <>
                         <FileText className="mr-2 h-4 w-4" />
-                        {isApproved ? 'Aprovado' : 'Aprovar e Gerar Roteiro'}
+                        {approvedSections.every(Boolean) ? 'Gerar Roteiro Completo' : 'Aprove todas as seções'}
                       </>
                     )}
                   </Button>
