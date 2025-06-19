@@ -320,13 +320,13 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
             <div>
               <ScriptStructureComponent
                 structure={agentState.structure}
-                onApproveSection={(index) => {
+                onApproveSection={(index: number) => {
                   toast({
                     title: "Seção aprovada",
                     description: `Seção ${index + 1} foi aprovada com sucesso`,
                   });
                 }}
-                onEditSection={(index) => {
+                onEditSection={(index: number) => {
                   toast({
                     title: "Edição",
                     description: `Editando seção ${index + 1}`,
