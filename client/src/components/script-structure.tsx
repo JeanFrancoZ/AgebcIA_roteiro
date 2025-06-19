@@ -1,12 +1,27 @@
 import { ScriptStructure } from "../types/script";
 import { Button } from "@/components/ui/button";
-import { Clock, Edit, Check, RotateCcw } from "lucide-react";
+import { Clock, Edit, Check, RotateCcw, Save, XCircle } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea"; // Import Textarea
+
+export interface Section {
+  name: string;
+  description: string;
+  content: string;
+  tips: string[];
+  duration: number;
+}
 
 interface ScriptStructureProps {
   structure: ScriptStructure;
   onApproveSection: (sectionIndex: number) => void;
-  onEditSection: (sectionIndex: number) => void;
+  onEditSection: (sectionIndex: number, currentContent: string) => void;
   onRegenerateStructure: () => void;
+  editingSection: number | null;
+  editedContent: string;
+  onEditContentChange: (content: string) => void;
+  onSaveEdit: () => void;
+  onCancelEdit: () => void;
+  approvedSections: number[];
 }
 
 const sectionGradients = [
@@ -27,7 +42,13 @@ export function ScriptStructureComponent({
   structure, 
   onApproveSection, 
   onEditSection, 
-  onRegenerateStructure 
+  onRegenerateStructure, 
+  editingSection,
+  editedContent,
+  onEditContentChange,
+  onSaveEdit,
+  onCancelEdit,
+  approvedSections
 }: ScriptStructureProps) {
   return (
     <div className="space-y-6">
@@ -58,28 +79,48 @@ export function ScriptStructureComponent({
                     size="sm"
                     variant="secondary"
                     className="bg-white/20 hover:bg-white/30 text-white border-none"
-                    onClick={() => onEditSection(index)}
+                    onClick={() => onEditSection(index, section.content)}
+                    disabled={editingSection === index}
                   >
                     <Edit className="h-3 w-3 mr-1" />
                     Editar
                   </Button>
                   <Button
                     size="sm"
-                    className="bg-green-500 hover:bg-green-600 text-white"
+                    className={`${approvedSections.includes(index) ? "bg-blue-500 hover:bg-blue-600" : "bg-green-500 hover:bg-green-600"} text-white`}
                     onClick={() => onApproveSection(index)}
                   >
                     <Check className="h-3 w-3 mr-1" />
-                    Aprovar
+                    {approvedSections.includes(index) ? "Aprovada" : "Aprovar"}
                   </Button>
                 </div>
               </div>
             </div>
             <div className="p-6">
-              <div className="prose prose-sm max-w-none dark:prose-invert">
-                <div className="text-slate-700 dark:text-slate-300 mb-4 whitespace-pre-wrap">
-                  {section.content}
+              {editingSection === index ? (
+                <div className="space-y-4">
+                  <Textarea 
+                    value={editedContent}
+                    onChange={(e) => onEditContentChange(e.target.value)}
+                    className="w-full min-h-[150px] dark:bg-slate-700 dark:text-white"
+                  />
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" onClick={onCancelEdit} size="sm">
+                      <XCircle className="h-4 w-4 mr-1" />
+                      Cancelar
+                    </Button>
+                    <Button onClick={onSaveEdit} size="sm">
+                      <Save className="h-4 w-4 mr-1" />
+                      Salvar Edição
+                    </Button>
+                  </div>
                 </div>
-                {section.tips.length > 0 && (
+              ) : (
+                <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <div className="text-slate-700 dark:text-slate-300 mb-4 whitespace-pre-wrap">
+                    {section.content}
+                  </div>
+                  {section.tips.length > 0 && (
                   <div className="bg-slate-50 dark:bg-slate-700 rounded p-3">
                     <h5 className="font-medium text-slate-900 dark:text-white mb-2">Dicas de Produção:</h5>
                     <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-1">
