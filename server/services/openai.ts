@@ -152,12 +152,12 @@ Responda em JSON com este formato:
     {
       "name": "Nome da Seção",
       "description": "descrição",
-      "duration": 10,
+      "duration": 30,
       "content": "conteúdo específico",
       "tips": ["dica1", "dica2"]
     }
   ],
-  "totalDuration": 60,
+  "totalDuration": 180,
   "format": "${scriptType}"
 }
 `;
@@ -221,7 +221,7 @@ Crie um roteiro completo e profissional, sem usar marcadores JSON - apenas o tex
 
 function getScriptTypeInPortuguese(type: string): string {
   const types: Record<string, string> = {
-    tiktok: "TikTok/Reels",
+    tiktok: "TikTok/Reels (vídeos de 30 segundos a 3 minutos)",
     youtube: "YouTube",
     marketing: "Marketing/Publicidade",
     shortfilm: "Curta-metragem"
@@ -231,7 +231,7 @@ function getScriptTypeInPortuguese(type: string): string {
 
 function getStructurePrompt(type: string): string {
   const structures: Record<string, string> = {
-    tiktok: "Gancho (3-5s) → Desenvolvimento (40-50s) → Call-to-Action (5-7s)",
+    tiktok: "Gancho (3-5s) → Desenvolvimento (2:30-2:50) → Call-to-Action (5-7s)",
     youtube: "Introdução (10-15%) → Desenvolvimento (70-80%) → Conclusão (10-15%)",
     marketing: "Atenção → Interesse → Desejo → Ação (AIDA)",
     shortfilm: "Três Atos: Apresentação → Confrontação → Resolução"
@@ -241,7 +241,7 @@ function getStructurePrompt(type: string): string {
 
 function getScriptFormatGuide(type: string): string {
   const formats: Record<string, string> = {
-    tiktok: "Formato Master Scenes com indicações para vertical (9:16), transições rápidas, legendas",
+    tiktok: "Formato Master Scenes com indicações para vertical (9:16), transições rápidas, legendas, e duração de 30 segundos a 3 minutos",
     youtube: "Formato de roteiro para YouTube com marcações de tempo, B-roll, gráficos",
     marketing: "Formato publicitário com CTA claro, indicações visuais, copy persuasivo",
     shortfilm: "Formato cinematográfico padrão (Master Scenes ou Shot List)"
