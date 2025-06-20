@@ -10,7 +10,7 @@ const scriptTypes: ScriptType[] = [
     id: "tiktok",
     name: "TikTok/Reels",
     description: "Vídeos curtos e virais",
-    duration: "15-60 segundos",
+    duration: "30 segundos a 3 minutos",
     icon: "fab fa-tiktok",
     gradient: "from-pink-500 to-purple-600",
     features: ["Gancho inicial", "Call-to-action", "Ritmo acelerado"]
