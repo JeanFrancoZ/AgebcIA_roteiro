@@ -64,7 +64,7 @@ Responda em JSON com este formato:
 `;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "o4-mini-2025-04-16",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       temperature: 0.7,
@@ -110,7 +110,7 @@ Responda em JSON com este formato:
 `;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "o4-mini-2025-04-16",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       temperature: 0.8,
@@ -163,7 +163,7 @@ Responda em JSON com este formato:
 `;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "o4-mini-2025-04-16",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       temperature: 0.7,
@@ -213,7 +213,7 @@ Crie um roteiro completo e profissional seguindo EXATAMENTE as regras Master Sce
 `;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "o4-mini-2025-04-16",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.8,
       max_tokens: 2000,
