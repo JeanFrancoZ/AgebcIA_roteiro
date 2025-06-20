@@ -27,11 +27,11 @@ export class ScriptingAgent {
 
   async processIdea(): Promise<AgentState> {
     try {
-      this.state.thoughts?.push('Analisando a ideia inicial do roteiro...');
+      this.state.thoughts?.push('Hmm, que ideia interessante! Deixa eu analisar isso mais a fundo...');
       this.state.currentStep = 'analysis';
       this.state.analysis = await analyzeScriptIdea(this.state.idea, this.state.scriptType);
       
-      this.state.thoughts?.push('Gerando perguntas para refinar a ideia...');
+      this.state.thoughts?.push('Tenho algumas perguntas para entender melhor o que você precisa. Lá vai!');
       this.state.currentStep = 'questions';  
       this.state.questions = await generateQuestions(
         this.state.idea, 
@@ -49,7 +49,7 @@ export class ScriptingAgent {
   async processAnswers(answers: Record<string, string>): Promise<AgentState> {
     try {
       this.state.answers = answers;
-      this.state.thoughts?.push('Processando as respostas para gerar a estrutura do roteiro...');
+      this.state.thoughts?.push('Boas respostas! Agora vou começar a montar o esqueleto do seu roteiro.');
       this.state.currentStep = 'structure';
       
       this.state.structure = await generateScriptStructure(
@@ -71,7 +71,7 @@ export class ScriptingAgent {
         throw new Error('Estrutura ou respostas não disponíveis');
       }
       
-      this.state.thoughts?.push('Gerando o roteiro final com base na estrutura e respostas...');
+      this.state.thoughts?.push('Tudo pronto! Mãos à obra para escrever o roteiro final.');
       this.state.currentStep = 'generation';
       
       this.state.finalScript = await generateFinalScript(
@@ -99,7 +99,7 @@ export class ScriptingAgent {
     }
     
     try {
-      this.state.thoughts?.push('Regenerando a estrutura do roteiro com base nas respostas...');
+      this.state.thoughts?.push('Ok, vamos repensar essa estrutura. Criando uma nova versão.');
       this.state.structure = await generateScriptStructure(
         this.state.idea,
         this.state.scriptType,
