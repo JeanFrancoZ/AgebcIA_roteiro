@@ -183,6 +183,7 @@ export async function generateFinalScript(
 ): Promise<string> {
   try {
     const formatGuide = getScriptFormatGuide(scriptType);
+    const masterSceneRules = getMasterSceneRules(scriptType);
     
     const prompt = `
 Você é um roteirista profissional especializado em conteúdo para o mercado brasileiro.
@@ -193,17 +194,22 @@ TIPO: ${getScriptTypeInPortuguese(scriptType)}
 ESTRUTURA: ${JSON.stringify(structure)}
 RESPOSTAS: ${JSON.stringify(answers)}
 
-FORMATO REQUIRED: ${formatGuide}
+FORMATO OBRIGATÓRIO: ${formatGuide}
+
+REGRAS DE FORMATAÇÃO MASTER SCENE:
+${masterSceneRules}
 
 O roteiro deve:
 - Estar em português brasileiro
-- Seguir padrões profissionais de formatação
+- Seguir RIGOROSAMENTE o formato Master Scene
 - Incluir diálogos naturais e brasileiros
-- Ter indicações técnicas específicas
+- Ter indicações técnicas específicas quando necessário
 - Incluir notas de produção relevantes
 - Ser otimizado para o formato ${scriptType}
+- Usar APENAS elementos filmáveis nas descrições
+- Seguir a regra "1 página = 1 minuto de tela"
 
-Crie um roteiro completo e profissional, sem usar marcadores JSON - apenas o texto do roteiro formatado.
+Crie um roteiro completo e profissional seguindo EXATAMENTE as regras Master Scene, sem usar marcadores JSON - apenas o texto do roteiro formatado.
 `;
 
     const response = await openai.chat.completions.create({
@@ -247,4 +253,77 @@ function getScriptFormatGuide(type: string): string {
     shortfilm: "Formato cinematográfico padrão (Master Scenes ou Shot List)"
   };
   return formats[type] || "formato padrão de roteiro";
+}
+
+function getMasterSceneRules(type: string): string {
+  const baseRules = `
+REGRAS FUNDAMENTAIS DO MASTER SCENE:
+
+1. CABEÇALHOS (Scene Headers/Sluglines):
+   - Sempre em MAIÚSCULAS
+   - Formato: INT./EXT. LOCALIZAÇÃO - TEMPO
+   - Exemplo: INT. CASA DE MARIA - DIA
+   - Novo cabeçalho para cada mudança de lugar ou tempo
+
+2. AÇÃO/DESCRIÇÃO:
+   - Presente do indicativo
+   - Apenas elementos FILMÁVEIS (o que se vê e ouve)
+   - Personagens em MAIÚSCULAS na primeira aparição
+   - SONS importantes em maiúsculas
+   - Objetos importantes em MAIÚSCULAS
+   - Evitar "vemos", "câmera mostra"
+   - Não repetir informações do cabeçalho
+
+3. DIÁLOGOS:
+   - Nome da personagem centralizado e em MAIÚSCULAS
+   - Instruções para ator entre parênteses quando necessário
+   - Diálogo natural e brasileiro
+   - Evitar excesso de instruções
+
+4. TRANSIÇÕES (quando necessário):
+   - CORTA PARA:
+   - FUSÃO PARA:
+   - FADE IN: (início)
+   - FADE OUT. (final)
+
+5. ELEMENTOS ESPECIAIS:
+   - POV (ponto de vista)
+   - INSERT (close-up de objeto)
+   - VOLTA À CENA
+   - MONTAGEM/SÉRIE DE PLANOS
+`;
+
+  const typeSpecificRules: Record<string, string> = {
+    tiktok: `
+ESPECÍFICO PARA TIKTOK/REELS:
+- Indicar orientação VERTICAL (9:16)
+- Marcar momentos para LEGENDAS
+- Transições RÁPIDAS
+- Indicar CALL-TO-ACTION
+- Duração: 30 segundos a 3 minutos
+- Ritmo acelerado nas descrições`,
+    
+    youtube: `
+ESPECÍFICO PARA YOUTUBE:
+- Marcações de tempo quando relevante
+- Indicações de B-ROLL
+- Momentos para gráficos/texto
+- Estrutura clara: Intro → Desenvolvimento → Conclusão`,
+    
+    marketing: `
+ESPECÍFICO PARA MARKETING:
+- CTA (Call-to-Action) bem definido
+- Indicações visuais claras
+- Copy persuasivo nos diálogos
+- Foco no produto/serviço`,
+    
+    shortfilm: `
+ESPECÍFICO PARA CURTA-METRAGEM:
+- Formato cinematográfico rigoroso
+- Estrutura de três atos
+- Desenvolvimento de personagens
+- Arco narrativo completo`
+  };
+
+  return baseRules + (typeSpecificRules[type] || "");
 }
