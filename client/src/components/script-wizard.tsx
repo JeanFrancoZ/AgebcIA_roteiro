@@ -300,57 +300,72 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
   const showNavigation = !agentState || agentState.currentStep === 'input' || (agentState.currentStep === 'structure' && agentState.structure);
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 items-start">
-      <div className="w-full lg:w-1/3">
-        <Card className="p-6 sticky top-4">
-          <h2 className="text-2xl font-bold mb-2">Assistente de Roteiro</h2>
-          <p className="text-muted-foreground mb-6">Siga as etapas para criar seu roteiro.</p>
-          <div className="space-y-4">
-            {steps.map((step, index) => (
-              <div key={index} className={`flex items-center ${step.active ? 'text-primary' : 'text-muted-foreground'}`}>
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-4 ${step.active ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                  {index + 1}
+    <div className="container mx-auto px-4 py-8">
+      <div className="grid grid-cols-1 gap-6">
+        {/* Assistente de Roteiro - Card mais compacto e horizontal */}
+        <Card className="p-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold mb-1">Assistente de Roteiro</h2>
+              <p className="text-sm text-muted-foreground">Siga as etapas para criar seu roteiro.</p>
+            </div>
+            <div className="flex gap-4">
+              {steps.map((step, index) => (
+                <div key={index} className={`flex items-center ${step.active ? 'text-primary' : 'text-muted-foreground'}`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-2 ${step.active ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                    {index + 1}
+                  </div>
+                  <span className="text-sm">{step.name}</span>
                 </div>
-                <span>{step.name}</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
+        </Card>
 
-          {agentState?.currentStep === 'structure' && agentState.structure && (
-            <div className="mt-6">
+        {/* Área de Conteúdo Principal */}
+        <Card className="p-6">
+          <div className="mb-6">
+            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+              Escolha o Tipo de Roteiro
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400">
+              Selecione o formato que melhor se adapta ao seu projeto
+            </p>
+          </div>
+          {renderCurrentStep()}
+          {showNavigation && !agentState && (
+            <div className="mt-6 flex justify-end">
               <Button 
-                onClick={handleGenerateScript} 
-                disabled={!approvedSections.every(Boolean) || generateScriptMutation.isPending}
-                className="w-full"
+                onClick={handleStart} 
+                disabled={!canProceedFromStep1 || !canProceedFromStep2 || createScriptMutation.isPending}
+                className="w-full sm:w-auto"
               >
-                {generateScriptMutation.isPending ? 'Gerando...' : 'Gerar Roteiro Final'}
-                <FileText className="w-4 h-4 ml-2" />
+                {createScriptMutation.isPending ? 'Analisando...' : 'Analisar Ideia'}
+                <Sparkles className="w-4 h-4 ml-2" />
               </Button>
             </div>
           )}
         </Card>
 
-        {agentThoughts.length > 0 && (
-          <div className="mt-4">
-            <AgentThought thoughts={agentThoughts.map(t => t.thought)} />
-          </div>
+        {/* Botão de Gerar Roteiro Final */}
+        {agentState?.currentStep === 'structure' && agentState.structure && (
+          <Card className="p-4">
+            <Button 
+              onClick={handleGenerateScript} 
+              disabled={!approvedSections.every(Boolean) || generateScriptMutation.isPending}
+              className="w-full"
+            >
+              {generateScriptMutation.isPending ? 'Gerando...' : 'Gerar Roteiro Final'}
+              <FileText className="w-4 h-4 ml-2" />
+            </Button>
+          </Card>
         )}
-      </div>
 
-      <div className="w-full lg:w-2/3">
-        <Card className="p-6">
-          {renderCurrentStep()}
-        </Card>
-
-        {showNavigation && (
-          <div className="mt-6 flex justify-end">
-            {!agentState && (
-              <Button onClick={handleStart} disabled={!canProceedFromStep1 || !canProceedFromStep2 || createScriptMutation.isPending}>
-                {createScriptMutation.isPending ? 'Analisando...' : 'Analisar Ideia'}
-                <Sparkles className="w-4 h-4 ml-2" />
-              </Button>
-            )}
-          </div>
+        {/* Pensamentos do Agente */}
+        {agentThoughts.length > 0 && (
+          <Card className="p-4">
+            <AgentThought thoughts={agentThoughts.map(t => t.thought)} />
+          </Card>
         )}
       </div>
     </div>
