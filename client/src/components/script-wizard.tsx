@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ScriptTypeSelector } from "./script-type-selector";
 import { IdeaInput } from "./idea-input";
@@ -19,14 +20,13 @@ interface ScriptWizardProps {
 }
 
 export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
-  const [currentStep, setCurrentStep] = useState(1);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [idea, setIdea] = useState("");
   const [scriptTitle, setScriptTitle] = useState("");
   const [currentScript, setCurrentScript] = useState<Script | null>(null);
   const [agentState, setAgentState] = useState<AgentState | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [agentThoughts, setAgentThoughts] = useState<string[]>([]);
+  const [agentThoughts, setAgentThoughts] = useState<{ step: string; thought: string }[]>([]);
   const [approvedSections, setApprovedSections] = useState<boolean[]>([]);
   const [, setLocation] = useLocation();
   
@@ -36,11 +36,13 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
   const createScriptMutation = useMutation({
     mutationFn: (data: { title: string; type: string; idea: string }) => api.createScript(data),
     onSuccess: (script) => {
+      console.log('Script created:', script);
       setCurrentScript(script);
       onScriptCreated?.(script);
       queryClient.invalidateQueries({ queryKey: ["/api/scripts"] });
       // Call analyzeScriptMutation after script creation
       if (script && script.id) {
+        console.log('Starting analysis for script:', script.id);
         analyzeScriptMutation.mutate(script.id);
       } else {
         toast({
@@ -50,7 +52,8 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
         });
       }
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Create script error:', error);
       toast({
         title: "Erro",
         description: "Falha ao criar roteiro",
@@ -62,11 +65,12 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
   const analyzeScriptMutation = useMutation({
     mutationFn: (scriptId: number) => api.analyzeScript(scriptId),
     onSuccess: (state) => {
+      console.log('Analyze script response:', state);
       setAgentState(state);
       setAgentThoughts(state.thoughts || []);
-      setCurrentStep(3); // Move to step 3 after analysis
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Analyze script error:', error);
       toast({
         title: "Erro",
         description: "Falha na análise da IA",
@@ -79,11 +83,16 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
     mutationFn: ({ scriptId, answers }: { scriptId: number; answers: Record<string, string> }) => 
       api.submitAnswers(scriptId, answers),
     onSuccess: (state) => {
+      console.log('Submit answers response:', state);
       setAgentState(state);
       setAgentThoughts(state.thoughts || []);
-      setCurrentStep(4);
+      if (state.structure) {
+        console.log('Structure found, setting approved sections:', state.structure.sections.length);
+        setApprovedSections(new Array(state.structure.sections.length).fill(false));
+      }
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Submit answers error:', error);
       toast({
         title: "Erro",
         description: "Falha ao processar respostas",
@@ -134,38 +143,22 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
   });
 
   const steps = [
-    { number: 1, name: "Tipo", active: currentStep >= 1 },
-    { number: 2, name: "Ideia", active: currentStep >= 2 },
-    { number: 3, name: "Estrutura", active: currentStep >= 3 },
-    { number: 4, name: "Roteiro", active: currentStep >= 4 },
+    { name: "Tipo", active: true },
+    { name: "Ideia", active: selectedType !== null },
+    { name: "Estrutura", active: agentState?.currentStep === 'structure' || agentState?.currentStep === 'generation' || agentState?.currentStep === 'completed' },
   ];
 
   const canProceedFromStep1 = selectedType !== null;
   const canProceedFromStep2 = idea.length >= 50 && scriptTitle.trim().length > 0;
 
-  const handleNextStep1 = () => {
-    if (canProceedFromStep1) {
-      setCurrentStep(2);
-    }
-  };
-
-  const handleNextStep2 = () => {
-    if (canProceedFromStep2) {
+  const handleStart = () => {
+    if (canProceedFromStep1 && canProceedFromStep2) {
       const title = scriptTitle || `Roteiro ${selectedType}`;
       createScriptMutation.mutate({
         title,
         type: selectedType!,
         idea,
       });
-      // analyzeScriptMutation is now called in onSuccess of createScriptMutation
-    }
-  };
-
-  const handleAnalyzeIdea = () => {
-    // This function is no longer directly called by the button in Step 2
-    // but can be kept for potential future use or removed if not needed.
-    if (currentScript) {
-      analyzeScriptMutation.mutate(currentScript.id);
     }
   };
 
@@ -205,218 +198,161 @@ export function ScriptWizard({ onScriptCreated }: ScriptWizardProps) {
     }
   };
 
-  const handleAnswerChange = (questionId: string, answer: string) => {
-    setAnswers(prev => ({ ...prev, [questionId]: answer }));
-  };
-
-  const isLoading = createScriptMutation.isPending || 
-                   analyzeScriptMutation.isPending || 
-                   submitAnswersMutation.isPending || 
-                   generateScriptMutation.isPending ||
-                   regenerateStructureMutation.isPending;
-
-  return (
-    <>
-      <Card className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-        {/* Progress Indicator */}
-        <div className="bg-slate-50 dark:bg-slate-700 px-6 py-4 border-b border-slate-200 dark:border-slate-600">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Criar Novo Roteiro</h2>
-            <div className="flex items-center space-x-2">
-              {steps.map((step, index) => (
-                <div key={step.number} className="flex items-center">
-                  {index > 0 && <div className="w-8 h-0.5 bg-slate-200 dark:bg-slate-600"></div>}
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                      step.active 
-                        ? "bg-primary text-white" 
-                        : "bg-slate-200 dark:bg-slate-600 text-slate-400"
-                    }`}>
-                      {step.number}
-                    </div>
-                    <span className={`text-sm ${
-                      step.active 
-                        ? "text-slate-900 dark:text-white" 
-                        : "text-slate-400"
-                    }`}>
-                      {step.name}
-                    </span>
-                  </div>
-                </div>
-              ))}
+  const renderCurrentStep = () => {
+    if (agentState) {
+      console.log('RenderCurrentStep - AgentState:', agentState);
+      console.log('RenderCurrentStep - Current Step:', agentState.currentStep);
+      console.log('RenderCurrentStep - Has questions:', !!agentState.questions?.length);
+      console.log('RenderCurrentStep - Has structure:', !!agentState.structure);
+      
+      switch (agentState.currentStep) {
+        case 'input':
+          return (
+            <div className="text-center py-8">
+              <p className="text-lg">Processando sua ideia...</p>
             </div>
-          </div>
-        </div>
-
-        <div className="p-6">
-          {/* Agent Thoughts */}
-          {agentThoughts.length > 0 && (
-            <div className="mb-8">
-              <AgentThought thoughts={agentThoughts} />
-            </div>
-          )}
-
-          {/* Step 1: Script Type Selection */}
-          {currentStep === 1 && (
-            <div>
-              <ScriptTypeSelector
-                selectedType={selectedType}
-                onSelect={setSelectedType}
-              />
-              <div className="flex justify-end mt-8">
-                <Button 
-                  onClick={handleNextStep1}
-                  disabled={!canProceedFromStep1}
-                >
-                  Continuar
-                  <ChevronRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Idea Input */}
-          {currentStep === 2 && (
-            <div>
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                  Descreva Sua Ideia
-                </h3>
-                <p className="text-slate-600 dark:text-slate-400">
-                  Conte-nos sobre o roteiro que você quer criar
-                </p>
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Título do roteiro
-                </label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-700 dark:text-white"
-                  placeholder="Ex: A História do Empreendedor"
-                  value={scriptTitle}
-                  onChange={(e) => setScriptTitle(e.target.value)}
+          );
+        case 'structure':
+          if (agentState.questions && agentState.questions.length > 0 && !agentState.structure) {
+            console.log('RenderCurrentStep - Showing questions form');
+            return (
+              <div className="space-y-6">
+                <AIAnalysisComponent
+                  analysis={agentState.analysis!}
+                  questions={agentState.questions}
+                  answers={answers}
+                  onAnswerChange={(questionId: string, answer: string) => {
+                    setAnswers(prev => ({ ...prev, [questionId]: answer }));
+                  }}
                 />
-              </div>
-
-              <IdeaInput idea={idea} onIdeaChange={setIdea} />
-
-              <div className="flex justify-between mt-8">
-                <Button variant="outline" onClick={() => setCurrentStep(1)}>
-                  <ChevronLeft className="mr-2 h-4 w-4" />
-                  Voltar
-                </Button>
-                <Button 
-                  onClick={handleNextStep2}
-                  disabled={!canProceedFromStep2 || isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Criando...
-                    </>
-                  ) : (
-                    <>
-                      Analisar Ideia
-                      <Sparkles className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: AI Analysis & Questions */}
-          {currentStep === 3 && agentState?.analysis && agentState?.questions && (
-            <div>
-              <AIAnalysisComponent
-                analysis={agentState.analysis}
-                questions={agentState.questions}
-                answers={answers}
-                onAnswerChange={handleAnswerChange}
-              />
-
-              <div className="flex justify-between mt-8">
-                <Button variant="outline" onClick={() => setCurrentStep(2)}>
-                  <ChevronLeft className="mr-2 h-4 w-4" />
-                  Voltar
-                </Button>
-                <Button 
-                  onClick={handleSubmitAnswers}
-                  disabled={Object.keys(answers).length === 0 || isLoading}
-                  className="bg-green-500 hover:bg-green-600"
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Processando...
-                    </>
-                  ) : (
-                    <>
-                      Gerar Estrutura
-                      <Sparkles className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: Generated Script Structure */}
-          {currentStep === 4 && agentState?.structure && (
-            <div>
-              <ScriptStructureComponent
-                structure={agentState.structure}
-                onToggleApproveSection={handleToggleApproveSection}
-                onEditSection={handleEditSection}
-                onRegenerateStructure={handleRegenerateStructure}
-                approvedSections={approvedSections}
-              />
-
-              <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-6 mt-8">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium text-slate-900 dark:text-white mb-1">
-                      Pronto para gerar o roteiro completo?
-                    </h4>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                      A IA criará o roteiro final baseado na estrutura aprovada
-                    </p>
-                  </div>
+                <div className="flex justify-end">
                   <Button 
-                    onClick={handleGenerateScript}
-                    disabled={isLoading || !approvedSections.every(Boolean)}
-                    size="lg"
-                    className={approvedSections.every(Boolean) ? 'bg-green-500 hover:bg-green-600' : ''}
+                    onClick={handleSubmitAnswers}
+                    disabled={Object.keys(answers).length === 0 || submitAnswersMutation.isPending}
                   >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Gerando...
-                      </>
-                    ) : (
-                      <>
-                        <FileText className="mr-2 h-4 w-4" />
-                        {approvedSections.every(Boolean) ? 'Gerar Roteiro Completo' : 'Aprove todas as seções'}
-                      </>
-                    )}
+                    {submitAnswersMutation.isPending ? 'Processando...' : 'Enviar Respostas'}
                   </Button>
                 </div>
               </div>
+            );
+          } else if (agentState.structure) {
+            console.log('RenderCurrentStep - Showing structure component');
+            return (
+              <ScriptStructureComponent
+                structure={agentState.structure}
+                approvedSections={approvedSections}
+                onToggleApproveSection={handleToggleApproveSection}
+                onEditSection={handleEditSection}
+                onRegenerateStructure={handleRegenerateStructure}
+              />
+            );
+          }
+          return (
+            <div className="text-center py-8">
+              <p className="text-lg">Analisando sua ideia...</p>
+            </div>
+          );
+        case 'generation':
+          return (
+            <div className="text-center py-8">
+              <p className="text-lg">Gerando seu roteiro...</p>
+            </div>
+          );
+        case 'completed':
+          return (
+            <div className="text-center py-8">
+              <p className="text-lg">Roteiro concluído!</p>
+            </div>
+          );
+        default:
+          console.error('Estado desconhecido:', agentState.currentStep);
+          return (
+            <div className="text-center py-8">
+              <p className="text-lg text-red-600">Estado desconhecido: {agentState.currentStep}</p>
+              <p className="text-sm text-gray-500 mt-2">Verifique o console para mais detalhes</p>
+            </div>
+          );
+      }
+    }
 
-              <div className="flex justify-between mt-6">
-                <Button variant="outline" onClick={() => setCurrentStep(3)}>
-                  <ChevronLeft className="mr-2 h-4 w-4" />
-                  Voltar
-                </Button>
+    return (        <>
+          <ScriptTypeSelector selectedType={selectedType} onSelect={setSelectedType} />
+          {selectedType && (
+            <div className="mt-6 space-y-4">
+              <div>
+                <Label htmlFor="title">Título do Roteiro</Label>
+                <input
+                  id="title"
+                  type="text"
+                  value={scriptTitle}
+                  onChange={(e) => setScriptTitle(e.target.value)}
+                  placeholder={`Roteiro ${selectedType}`}
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                />
               </div>
+              <IdeaInput idea={idea} onIdeaChange={setIdea} />
             </div>
           )}
-        </div>
-      </Card>
+        </>
+    );
+  };
 
+  const showNavigation = !agentState || agentState.currentStep === 'input' || (agentState.currentStep === 'structure' && agentState.structure);
 
-    </>
+  return (
+    <div className="flex flex-col lg:flex-row gap-8 items-start">
+      <div className="w-full lg:w-1/3">
+        <Card className="p-6 sticky top-4">
+          <h2 className="text-2xl font-bold mb-2">Assistente de Roteiro</h2>
+          <p className="text-muted-foreground mb-6">Siga as etapas para criar seu roteiro.</p>
+          <div className="space-y-4">
+            {steps.map((step, index) => (
+              <div key={index} className={`flex items-center ${step.active ? 'text-primary' : 'text-muted-foreground'}`}>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-4 ${step.active ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                  {index + 1}
+                </div>
+                <span>{step.name}</span>
+              </div>
+            ))}
+          </div>
+
+          {agentState?.currentStep === 'structure' && agentState.structure && (
+            <div className="mt-6">
+              <Button 
+                onClick={handleGenerateScript} 
+                disabled={!approvedSections.every(Boolean) || generateScriptMutation.isPending}
+                className="w-full"
+              >
+                {generateScriptMutation.isPending ? 'Gerando...' : 'Gerar Roteiro Final'}
+                <FileText className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          )}
+        </Card>
+
+        {agentThoughts.length > 0 && (
+          <div className="mt-4">
+            <AgentThought thoughts={agentThoughts.map(t => t.thought)} />
+          </div>
+        )}
+      </div>
+
+      <div className="w-full lg:w-2/3">
+        <Card className="p-6">
+          {renderCurrentStep()}
+        </Card>
+
+        {showNavigation && (
+          <div className="mt-6 flex justify-end">
+            {!agentState && (
+              <Button onClick={handleStart} disabled={!canProceedFromStep1 || !canProceedFromStep2 || createScriptMutation.isPending}>
+                {createScriptMutation.isPending ? 'Analisando...' : 'Analisar Ideia'}
+                <Sparkles className="w-4 h-4 ml-2" />
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

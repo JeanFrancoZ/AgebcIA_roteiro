@@ -8,9 +8,9 @@ export interface AgentState {
   answers?: Record<string, string>;
   structure?: ScriptStructure;
   finalScript?: string;
-  currentStep: 'input' | 'analysis' | 'questions' | 'structure' | 'generation' | 'completed';
+  currentStep: 'input' | 'structure' | 'generation' | 'completed';
   error?: string;
-  thoughts?: string[];
+  thoughts?: { step: string; thought: string }[];
 }
 
 export class ScriptingAgent {
@@ -27,20 +27,28 @@ export class ScriptingAgent {
 
   async processIdea(): Promise<AgentState> {
     try {
-      this.state.thoughts?.push('Hmm, que ideia interessante! Deixa eu analisar isso mais a fundo...');
-      this.state.currentStep = 'analysis';
-      this.state.analysis = await analyzeScriptIdea(this.state.idea, this.state.scriptType);
+      console.log('ProcessIdea - Starting analysis for:', this.state.idea, this.state.scriptType);
+      this.state.thoughts?.push({ step: 'analysis', thought: 'Hmm, que ideia interessante! Deixa eu analisar isso mais a fundo...' });
       
-      this.state.thoughts?.push('Tenho algumas perguntas para entender melhor o que você precisa. Lá vai!');
-      this.state.currentStep = 'questions';  
+      console.log('ProcessIdea - Calling analyzeScriptIdea...');
+      this.state.analysis = await analyzeScriptIdea(this.state.idea, this.state.scriptType);
+      console.log('ProcessIdea - Analysis completed:', this.state.analysis);
+      
+      this.state.thoughts?.push({ step: 'questions', thought: 'Tenho algumas perguntas para entender melhor o que você precisa. Lá vai!' });
+      this.state.currentStep = 'structure';  
+      
+      console.log('ProcessIdea - Calling generateQuestions...');
       this.state.questions = await generateQuestions(
         this.state.idea, 
         this.state.scriptType, 
         this.state.analysis
       );
+      console.log('ProcessIdea - Questions generated:', this.state.questions);
       
+      console.log('ProcessIdea - Final state:', this.state);
       return this.state;
     } catch (error) {
+      console.error('ProcessIdea - Error:', error);
       this.state.error = (error as Error).message;
       return this.state;
     }
@@ -48,18 +56,23 @@ export class ScriptingAgent {
 
   async processAnswers(answers: Record<string, string>): Promise<AgentState> {
     try {
+      console.log('ProcessAnswers - Starting with answers:', answers);
       this.state.answers = answers;
-      this.state.thoughts?.push('Boas respostas! Agora vou começar a montar o esqueleto do seu roteiro.');
+      this.state.thoughts?.push({ step: 'structure', thought: 'Boas respostas! Agora vou começar a montar o esqueleto do seu roteiro.' });
       this.state.currentStep = 'structure';
       
+      console.log('ProcessAnswers - Calling generateScriptStructure...');
       this.state.structure = await generateScriptStructure(
         this.state.idea,
         this.state.scriptType,
         answers
       );
+      console.log('ProcessAnswers - Structure generated:', this.state.structure);
       
+      console.log('ProcessAnswers - Final state:', this.state);
       return this.state;
     } catch (error) {
+      console.error('ProcessAnswers - Error:', error);
       this.state.error = (error as Error).message;
       return this.state;
     }
@@ -71,7 +84,7 @@ export class ScriptingAgent {
         throw new Error('Estrutura ou respostas não disponíveis');
       }
       
-      this.state.thoughts?.push('Tudo pronto! Mãos à obra para escrever o roteiro final.');
+      this.state.thoughts?.push({ step: 'generation', thought: 'Tudo pronto! Mãos à obra para escrever o roteiro final.' });
       this.state.currentStep = 'generation';
       
       this.state.finalScript = await generateFinalScript(
@@ -99,7 +112,7 @@ export class ScriptingAgent {
     }
     
     try {
-      this.state.thoughts?.push('Ok, vamos repensar essa estrutura. Criando uma nova versão.');
+      this.state.thoughts?.push({ step: 'structure', thought: 'Ok, vamos repensar essa estrutura. Criando uma nova versão.' });
       this.state.structure = await generateScriptStructure(
         this.state.idea,
         this.state.scriptType,

@@ -60,6 +60,7 @@ export interface AgentState {
   answers?: Record<string, string>;
   structure?: ScriptStructure;
   finalScript?: string;
-  currentStep: 'input' | 'analysis' | 'questions' | 'structure' | 'generation' | 'completed';
+  currentStep: 'input' | 'structure' | 'generation' | 'completed';
   error?: string;
+  thoughts?: { step: string; thought: string }[];
 }

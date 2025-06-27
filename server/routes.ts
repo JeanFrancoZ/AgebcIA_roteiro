@@ -24,12 +24,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/scripts", async (req, res) => {
     try {
       const validatedData = insertScriptSchema.parse(req.body);
+      console.log('Create script - Validated data:', validatedData);
+      
       const script = await storage.createScript({
         ...validatedData,
         userId: 1 // Demo user
       });
+      console.log('Create script - Script created:', script);
+      
       res.json(script);
     } catch (error) {
+      console.error('Create script - Error:', error);
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: "Dados inválidos", details: error.errors });
       } else {
@@ -82,7 +87,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/scripts/:id/analyze", async (req, res) => {
     try {
       const scriptId = parseInt(req.params.id);
+      console.log('Analyze route - Starting for scriptId:', scriptId);
+      
       const script = await storage.getScript(scriptId);
+      console.log('Analyze route - Script found:', script);
       
       if (!script) {
         res.status(404).json({ error: "Roteiro não encontrado" });
@@ -92,8 +100,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const agent = new ScriptingAgent(script.idea, script.type);
       const sessionKey = `script_${scriptId}`;
       agents.set(sessionKey, agent);
+      console.log('Analyze route - Agent created and stored with key:', sessionKey);
 
+      console.log('Analyze route - Starting processIdea...');
       const result = await agent.processIdea();
+      console.log('Analyze route - ProcessIdea completed:', result);
       
       // Save AI session
       await storage.createAiSession({
@@ -102,9 +113,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         input: { idea: script.idea, type: script.type },
         output: result
       });
+      console.log('Analyze route - AI session saved');
 
       res.json(result);
     } catch (error) {
+      console.error('Analyze route - Error:', error);
       res.status(500).json({ error: "Falha na análise da IA: " + (error as Error).message });
     }
   });
